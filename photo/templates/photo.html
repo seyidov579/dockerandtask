@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% load thumbnail %}
+
+{% block content %}
+<div class="row">
+
+    <!-- Blog Entries Column -->
+    <div class="col-md-8">
+
+      <h4 class="my-4">{{ users.email }}
+        <small>Photo list</small>
+      </h4>
+      {% for photo_item in photo %}
+      <div class="col-md-4 portfolio-item">
+          <div class="card h-100">
+            <a href="{% url 'photo:details' photo_item.photo.id %}"><img class="card-img-top" src="{{ photo_item.photo.image| thumbnail_url:'avatar' }}" alt=""></a>
+            <div class="card-body">
+              <h4 class="card-title">
+                <a href="{% url 'photo:details' photo_item.photo.id %}">Project Five</a>
+              </h4>
+            </div>
+          </div>
+      </div>
+      {% endfor %}
+
+    </div>
+
+    <!-- Sidebar Widgets Column -->
+    <div class="col-md-4">
+
+      <!-- Search Widget -->
+      <div class="card my-4">
+        <h5 class="card-header">Search</h5>
+        <div class="card-body">
+          <div class="input-group">
+            <input type="text" class="form-control" placeholder="Search for...">
+            <span class="input-group-btn">
+              <button class="btn btn-secondary" type="button">Go!</button>
+            </span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+</div>
+<!-- /.row -->
+{% endblock %}

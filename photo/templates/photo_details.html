@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<div class="row">
+<div class="col-md-8">
+  <div class="card mt-4">
+    <img class="card-img-top img-fluid" src="{{ photo.image.url }}" alt="">
+    <div class="card-body">
+      <h3 class="card-title">Photo Name</h3>
+    </div>
+  </div>
+  <!-- /.card -->
+
+  <div class="card card-outline-secondary my-4">
+    <div class="card-header">
+      Photo Comment
+    </div>
+    <div class="card-body">
+        <div id="textHolder">
+          {% for comment_item in comments %}
+          <p class="edit{{ comment_item.id }}">{{ comment_item.comment }}
+              {% if comment_item.users == user or comment_item.photo.users == user %}
+              <button class="deleteItem" value="{{ comment_item.id }}" style="float:  right;"><i class="fas fa-minus-circle"></i></button>
+              {% endif %}
+            {% if comment_item.users == user %}
+              <button onclick="return getEditDialog('{{ comment_item.id }}')" class="editItem" value="{{ comment_item.id }}" style="float:  right;margin-right: 5px;"> <i class="far fa-edit"></i></button>
+            {% endif %}
+          </p>
+
+          <small class="text-muted comment{{ comment_item.id }}">Posted by {{ comment_item.users }}</small>
+
+          <hr class="comment{{ comment_item.id }}">
+            {% endfor %}
+        </div>
+    {% if write_comment %}
+    <form id="comment" method="post">
+        {% csrf_token %}
+        <input type="hidden" id="email" value="{{ user.email }}">
+        <input type="hidden" id="last_id" value="{{ last_id }}">
+        {{ form.as_p }}
+        <input type="submit" class="btn btn-success">
+    </form>
+    {% endif %}
+    </div>
+  </div>
+  <!-- /.card -->
+
+</div>
+<div class="col-md-4">
+      <!-- Search Widget -->
+      <div class="card my-4">
+        <h5 class="card-header">Share and Permission</h5>
+        <div class="card-body">
+          <div class="input-group">
+            <input type="email" id="allow_email" class="form-control" placeholder="Search for...">
+            <span class="input-group-btn">
+                <div class="col-md-12">
+                      <button onclick="return allow_photo('{{ photo.id }}', 'photo')" class="btn btn-secondary btn-sm" type="button" style="margin-left: -15px;margin-top: 10px;">Allow Photo</button>
+                      <button onclick="return allow_photo('{{ photo.id }}', 'comment')" class="btn btn-secondary btn-sm" type="button" style="margin-left: 55px;margin-top: 11px;">Allow Comment</button>
+                </div>
+            </span>
+          </div>
+        </div>
+      </div>
+
+</div>
+
+</div>
+    <div id="dialog_page" class="modal"></div>
+
+
+{% endblock %}
+{% block script %}
+    <script src="{% static 'js/reconnecting-websocket.min.js' %}"></script>
+    <script>
+
+        var loc = window.location;
+        var textHolder = $("#textHolder");
+        var txtInput = $("#id_comment");
+        var email = $("#email").val();
+        var last_id = $("#last_id")
+        var formData = $("#comment");
+        var wsStart = 'ws://';
+        if (loc.protocol == 'https:'){
+            wsStart = 'wss://'
+        }
+        var endpoint = wsStart + loc.host + loc.pathname;
+        console.log(endpoint);
+        var socket = new ReconnectingWebSocket(endpoint);
+        socket.onmessage = function (e) {
+            console.log("message", e);
+            var chatDataMsg = JSON.parse(e.data);
+            textHolder.append('<p>' + chatDataMsg.message + '<button class="deleteItem" value="'+ chatDataMsg.id + '" style="float:right;"><i class="fas fa-minus-circle"></i></button><button value="'+ chatDataMsg.id + '" style="float:  right;margin-right: 5px;"> <i class="far fa-edit"></i></button></p>' + '<small class="text-muted comment' + chatDataMsg.id + '">Posted by ' + chatDataMsg.username +'</small><hr class="comment' + chatDataMsg.id + '">')
+        };
+
+        socket.onopen = function (e) {
+            console.log("open", e);
+            formData.submit(function (event) {
+                event.preventDefault();
+                var msg = txtInput.val();
+                var id = last_id.val();
+                {#textHolder.append('<p>' + msg + '</p>' + '<small class="text-muted">Posted by ' + email +'</small><hr>');#}
+                var finalData = {
+                    'message': msg,
+                    'id': id
+                };
+                socket.send(JSON.stringify(finalData));
+                formData[0].reset()
+            })
+
+        };
+
+        socket.onerror = function (e) {
+            console.log("error", e)
+        };
+
+        socket.onclose = function (e) {
+            console.log("close", e)
+
+        };
+    $(".deleteItem").click(function() {
+        var commentContainer = $(this).parent();
+        // language=JQuery-CSS
+        var post = $(".comment" + $(this).val());
+            $.ajax({
+                type: 'GET',
+                url: '/photo/details/comment/delete/' + $(this).val(),
+                success: function(){
+                    commentContainer.slideUp('slow', function() {$(this).remove();});
+                    $('#load').fadeOut();
+                    post.remove();
+                },
+                error: function(){
+                    alert("403 Forbidden");
+                },
+            });
+    });
+    </script>
+
+    <script>
+        function getEditDialog(id) {
+            $.ajax({
+                url: "{% url 'photo:edit' %}" + "?id="+id
+            }).then(function(data) {
+                $('#dialog_page').html(data);
+                var modal = document.getElementById('dialog_page');
+                modal.style.display = "block";
+            });
+        }
+
+        function form_submit(id) {
+        var data = $('#comment_edit_form').serialize();
+            $.ajax({
+                type: 'POST',
+                url: "{% url 'photo:edit' %}"+"?id="+ id,
+                data: data,
+                success: function (data) {
+                    console.log("success message");
+                }, error: function (request, status, error) {
+                    alert(status);
+                    console.log(request);
+                    alert(error);
+                }
+            });
+        }
+
+        function allow_photo(id, type) {
+            {#var email = document.getElementById("searchTxt").value;#}
+            var email = $("#allow_email");
+            $.ajax({
+                type: 'GET',
+                url: "{% url 'photo:allow' %}"+"?email=" + email.val() + "&type=" + type + "&id=" + id,
+                success: function (data) {
+                    alert("Successful");
+                }, error: function (request, status, error) {
+                    alert(status);
+                    console.log(request);
+                    var err = JSON.parse(request.responseText);
+                    alert(err.message);
+                }
+            });
+        }
+
+    </script>
+
+
+{% endblock %}
