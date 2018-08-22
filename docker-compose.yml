@@ -7,6 +7,7 @@ services:
     environment:
       POSTGRES_PASSWORD: example
 
+
   web:
     build: .
     command: python3 manage.py runserver 0.0.0.0:8000
@@ -22,12 +23,8 @@ services:
     restart: always
     ports:
       - 8080:8080
-  
+
   redis:
-    image: redis:3.2-alpine
+    image: redis
     ports:
-     - "6379:6379"
-    volumes:
-      - redis_data:/data
-volumes:  
-  redis_data:
+      - 6379:6379
