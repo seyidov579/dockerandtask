@@ -1,8 +1,10 @@
+from PIL import Image
 from django.db import models
 from django.db.models import Q
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from easy_thumbnails.fields import ThumbnailerImageField
+from easy_thumbnails.files import get_thumbnailer
 
 from labrintask import settings
 from users.models import Users
@@ -30,6 +32,8 @@ def photo_signal(sender, **kwargs):
     instance = kwargs.get('instance')
     if kwargs['created']:
         PhotoSharing.objects.create(users=instance.users, photo=Photo.objects.get(id=instance.id), comment=True)
+
+    thumb_url = get_thumbnailer(instance.image).get_thumbnail(settings.options).url
 
 
 

@@ -136,11 +136,7 @@ USE_TZ = True
 STATIC_URL = '/static/'
 # STATIC_ROOT = 'staticfiles'
 
-THUMBNAIL_ALIASES = {
-    '': {
-        'avatar': {'size': (200, 200), 'crop': True},
-    },
-}
+options = {'size': (200, 200), 'crop': True}
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = 'media'

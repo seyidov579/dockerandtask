@@ -36,7 +36,6 @@
     <form id="comment" method="post">
         {% csrf_token %}
         <input type="hidden" id="email" value="{{ user.email }}">
-        <input type="hidden" id="last_id" value="{{ last_id }}">
         {{ form.as_p }}
         <input type="submit" class="btn btn-success">
     </form>
@@ -77,8 +76,8 @@
         var loc = window.location;
         var textHolder = $("#textHolder");
         var txtInput = $("#id_comment");
-        var email = $("#email").val();
-        var last_id = $("#last_id")
+        {#var email = $("#email").val();#}
+        {#var last_id = $("#last_id")#}
         var formData = $("#comment");
         var wsStart = 'ws://';
         if (loc.protocol == 'https:'){
@@ -98,11 +97,10 @@
             formData.submit(function (event) {
                 event.preventDefault();
                 var msg = txtInput.val();
-                var id = last_id.val();
+                {#var id = last_id.val();#}
                 {#textHolder.append('<p>' + msg + '</p>' + '<small class="text-muted">Posted by ' + email +'</small><hr>');#}
                 var finalData = {
                     'message': msg,
-                    'id': id
                 };
                 socket.send(JSON.stringify(finalData));
                 formData[0].reset()

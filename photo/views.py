@@ -1,21 +1,30 @@
 import json
 
 from django.contrib.auth.decorators import login_required
+from django.core.checks import messages
 from django.core.exceptions import PermissionDenied
 from django.http import Http404, HttpResponse
 from django.shortcuts import render, get_object_or_404, redirect
 
+from labrintask import settings
 from photo.forms import ComposeForm, UploadPhotoForm
 from photo.models import Photo, PhotoSharing, Comment
+from photo.utils import generate_photo_thumnail_name
 from users.models import Users
 
 
 @login_required
 def home(request):
+    photo_data = []
     template = 'content.html'
     photo = Photo.objects.filter(users=request.user)
+    for photo_item in photo:
+        crop_url = generate_photo_thumnail_name(photo_item.image)
+        data = {'id': photo_item.id, 'photo': photo_item.image, 'crop_url': crop_url}
+        photo_data.append(data)
+
     users = Users.objects.all()
-    return render(request, template, {'photo': photo, 'users': users})
+    return render(request, template, {'photo': photo_data, 'users': users})
 
 
 def check_sharing(preview_user, user):
@@ -48,6 +57,7 @@ def check_write_comment(photo, user):
 
 @login_required
 def photo_list(request):
+    crop_data = []
     if 'user' in request.GET:
         preview_user = request.GET['user']
     else:
@@ -57,8 +67,11 @@ def photo_list(request):
     else:
         template = 'photo.html'
         sharing = PhotoSharing.objects.filter(users=request.user, photo__users=Users.objects.get(email=preview_user))
-        # photo = Photo.objects.filter(users=Users.objects.get(id=preview_user), id=sharing_item.photo.id)
-        return render(request, template, {'photo': sharing, 'users': Users.objects.get(email=preview_user)})
+        for sharing_item in sharing:
+            crop_url = generate_photo_thumnail_name(sharing_item.photo.image)
+            data = {'id': sharing_item.photo.id, 'photo': sharing_item.photo.image, 'crop_url': crop_url}
+            crop_data.append(data)
+        return render(request, template, {'photo': crop_data, 'users': Users.objects.get(email=preview_user)})
 
 
 @login_required
@@ -69,18 +82,12 @@ def photo_details(request, pk):
     photo = get_object_or_404(Photo, id=pk)
     form = ComposeForm()
     comments = Comment.objects.filter(photo=photo).order_by("id")
-    comment_last_id = Comment.objects.all().last()
-    if comment_last_id == None:
-        last_id = 0
-    else:
-        last_id = comment_last_id.id
     write_comment = check_write_comment(pk, request.user)
     print(write_comment)
     content = {
         'photo': photo,
         'comments': comments,
         'form': form,
-        'last_id': last_id,
         'write_comment': write_comment
     }
     return render(request, template, content)

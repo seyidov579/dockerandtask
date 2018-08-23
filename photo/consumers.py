@@ -37,22 +37,23 @@ class CommentConsumer(AsyncConsumer):
         if front_text is not None:
             loaded_dict_data = json.loads(front_text)
             msg = loaded_dict_data.get("message")
-            comment_last_id = Comment.objects.all().last()
-            if comment_last_id == None:
-                current_id = 1
-            else:
-                current_id = comment_last_id.id + 1
+            # comment_last_id = Comment.objects.all().last()
+            # if comment_last_id == None:
+            #     current_id = 1
+            # else:
+            #     current_id = comment_last_id.id + 1
             photo_id = self.scope['url_route']['kwargs']['pk']
             user = self.scope['user']
             username = 'default'
             if user.is_authenticated:
                 username = user.email
+
+            create = await self.create_comment(photo_id, user, msg)
             myResponse = {
                 'message': msg,
                 'username': username,
-                'id': current_id
+                'id': create.id
             }
-            await self.create_comment(current_id, photo_id, user, msg)
 
             # broadcasts the message event to be send
             await self.channel_layer.group_send(
@@ -78,18 +79,18 @@ class CommentConsumer(AsyncConsumer):
     async def websocket_disconnect(self, event):
         print("disconnected", event)
 
-    @database_sync_to_async
-    def get_comment(self):
-        comment = Comment.objects.all().last()
-        if comment == None:
-            id = 0
-        else:
-            id = comment.id
-        return id
+    # @database_sync_to_async
+    # def get_comment(self):
+    #     comment = Comment.objects.all().last()
+    #     if comment == None:
+    #         id = 0
+    #     else:
+    #         id = comment.id
+    #     return id
 
     @database_sync_to_async
-    def create_comment(self,current_id,  photo, me, message):
+    def create_comment(self, photo, me, message):
         if not check_write_comment(photo, me):
             raise PermissionError
         else:
-            return Comment.objects.create(id=current_id, photo=Photo.objects.get(id=photo), users=me, comment=message)
+            return Comment.objects.create(photo=Photo.objects.get(id=photo), users=me, comment=message)

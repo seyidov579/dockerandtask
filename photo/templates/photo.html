@@ -1,6 +1,4 @@
 {% extends 'base.html' %}
-{% load thumbnail %}
-
 {% block content %}
 <div class="row">
 
@@ -13,10 +11,10 @@
       {% for photo_item in photo %}
       <div class="col-md-4 portfolio-item">
           <div class="card h-100">
-            <a href="{% url 'photo:details' photo_item.photo.id %}"><img class="card-img-top" src="{{ photo_item.photo.image| thumbnail_url:'avatar' }}" alt=""></a>
+            <a href="{% url 'photo:details' photo_item.id %}"><img class="card-img-top" src="{{ photo_item.photo.url }}{{ photo_item.crop_url }}" alt=""></a>
             <div class="card-body">
               <h4 class="card-title">
-                <a href="{% url 'photo:details' photo_item.photo.id %}">Project Five</a>
+                <a href="{% url 'photo:details' photo_item.id %}">Project Five</a>
               </h4>
             </div>
           </div>
